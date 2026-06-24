@@ -1,0 +1,52 @@
+# docker-compose.yml — описывает все сервисы нашего приложения.
+#
+# Аналогия: если Dockerfile — это рецепт одного блюда,
+# то docker-compose — это меню всего ресторана.
+# Здесь мы описываем ВСЕ части системы и как они связаны.
+#
+# Наши сервисы:
+#   api   — FastAPI приложение
+#   mongo — база данных MongoDB
+
+version: "3.9"
+
+services:
+
+  # ── FastAPI приложение ────────────────────────────────────────────
+  api:
+    build:
+      context: .          # собрать образ из текущей директории (Dockerfile)
+    container_name: key_manager_api
+    ports:
+      - "8000:8000"       # хост:контейнер — открываем порт наружу
+    environment:
+      - MONGO_URL=mongodb://mongo:27017   # "mongo" — имя сервиса ниже
+      - MONGO_DB_NAME=key_manager
+      - SECRET_KEY=${SECRET_KEY:-super-secret-dev-key-change-in-prod}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - FERNET_KEY=${FERNET_KEY:-}
+    depends_on:
+      mongo:
+        condition: service_healthy   # ждём пока MongoDB готова
+    restart: unless-stopped
+
+  # ── MongoDB ───────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: key_manager_mongo
+    ports:
+      - "27017:27017"     # открываем для подключения из PyCharm/Compass
+    volumes:
+      - mongo_data:/data/db   # данные сохраняются между перезапусками
+    healthcheck:
+      # Проверяем, что MongoDB готова принимать соединения
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mongo_data:    # именованный том для хранения данных MongoDB
