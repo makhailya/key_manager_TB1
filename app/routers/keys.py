@@ -11,9 +11,8 @@ DELETE /keys/{key_id} — удалить ключ
 Каждый пользователь видит ТОЛЬКО свои ключи.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from app.models.key import Key
@@ -42,8 +41,7 @@ async def list_keys(
     query = Key.find(Key.owner_id == str(current_user.id))
 
     if tag:
-        # MongoDB: ищем документы, где массив tags содержит нужный тег
-        query = Key.find(Key.owner_id == str(current_user.id), {"tags": tag})
+        query = Key.find(Key.owner_id == str(current_user.id), Key.tags == tag)
 
     keys = await query.to_list()
 
@@ -166,7 +164,7 @@ async def update_key(
     if key_data.value is not None:
         update_data["encrypted_value"] = crypto_service.encrypt(key_data.value)
 
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.now(timezone.utc)
 
     await key.set(update_data)
 

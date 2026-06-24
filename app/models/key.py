@@ -6,11 +6,11 @@ models/key.py — модель «ключа» (секрета) в MongoDB.
 Даже если кто-то взломает БД — он увидит только зашифрованный blob.
 """
 
-from datetime import datetime
-from beanie import Document, Link, Indexed
-from pydantic import Field
+from datetime import datetime, timezone
+from typing import Annotated
 
-from app.models.user import User
+from beanie import Document, Indexed
+from pydantic import Field
 
 
 class Key(Document):
@@ -19,13 +19,13 @@ class Key(Document):
     Каждый документ — один секрет пользователя.
     """
 
-    owner_id: Indexed(str)      # ID пользователя-владельца (индекс для быстрого поиска)
+    owner_id: Annotated[str, Indexed()]
     name: str                   # человекочитаемое название: "GitHub Token", "AWS Key"
     description: str | None = None
     encrypted_value: str        # ЗАШИФРОВАННОЕ значение ключа (Fernet)
-    tags: list[str] = []        # теги для фильтрации: ["aws", "production"]
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    tags: list[str] = []        # теги для фильтрации: [aws, production]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "keys"

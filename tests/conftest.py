@@ -11,7 +11,8 @@ conftest.py — специальный файл pytest. Фикстуры, объ
 работает похоже, но не нужно идти на настоящую гору.
 """
 
-import pytest
+from collections.abc import AsyncGenerator
+
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from beanie import init_beanie
@@ -24,27 +25,16 @@ from app.models.key import Key
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_db():
-    """
-    Фикстура: поднимает мок-базу данных перед каждым тестом
-    и очищает её после.
-    
-    autouse=True — применяется ко всем тестам автоматически.
-    """
     client = AsyncMongoMockClient()
     await init_beanie(
         database=client["test_db"],
         document_models=[User, Key],
     )
-    yield  # тест выполняется здесь
-    # После теста коллекции очищаются автоматически (мок в памяти)
+    yield
 
 
 @pytest_asyncio.fixture
-async def client() -> AsyncClient:
-    """
-    HTTP клиент для тестирования FastAPI приложения.
-    ASGITransport позволяет делать запросы напрямую к app, без сети.
-    """
+async def client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test"

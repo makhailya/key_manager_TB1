@@ -7,7 +7,6 @@ tests/test_auth.py — тесты для эндпоинтов аутентифи
 - Assert (Проверка): проверяем результат
 """
 
-import pytest
 from httpx import AsyncClient
 
 

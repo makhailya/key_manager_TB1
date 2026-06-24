@@ -18,22 +18,9 @@ from app.routers import auth, keys
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    lifespan — управление жизненным циклом приложения.
-    
-    Код ДО yield — выполняется при старте (как __init__)
-    Код ПОСЛЕ yield — выполняется при остановке (как __del__)
-    
-    Аналогия: это как включение и выключение света в комнате.
-    Входишь — свет включается, выходишь — выключается.
-    """
-    # Старт: подключаемся к MongoDB
+async def lifespan(application: FastAPI):
     await init_db()
-    print("✅ База данных подключена")
     yield
-    # Остановка: можно закрыть соединения (Motor закрывает сам)
-    print("🔴 Приложение остановлено")
 
 
 app = FastAPI(
@@ -59,9 +46,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — разрешаем запросы с любых доменов (для разработки)
-# В продакшене укажи конкретные домены: ["https://yourfrontend.com"]
-app.add_middleware(
+app.add_middleware(  # type: ignore[arg-type]
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,

@@ -2,7 +2,6 @@
 tests/test_keys.py — тесты для CRUD операций с ключами.
 """
 
-import pytest
 from httpx import AsyncClient
 
 
